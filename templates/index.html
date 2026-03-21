@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Movie Review Sentiment Analyzer</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 70%;
+            margin: auto;
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-top: 40px;
+        }
+
+        form {
+            margin: 20px 0;
+        }
+
+        input {
+            padding: 12px;
+            width: 60%;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: orange;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: darkorange;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 15px;
+            width: 80%;
+            text-align: left;
+            box-shadow: 0px 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .review {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .sentiment {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .rating {
+            color: gold;
+            font-size: 20px;
+        }
+
+        .genre {
+            color: #0077cc;
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .positive { background: #28a745; }
+        .neutral { background: #ffc107; }
+        .negative { background: #dc3545; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎬 Movie Review Sentiment Analyzer</h1>
+
+    <form method="POST">
+        <input type="text" name="movie" placeholder="Enter Movie Name...">
+        <button type="submit">Analyze</button>
+    </form>
+
+    {% if message %}
+        <p style="color:white">{{ message }}</p>
+    {% endif %}
+
+    {% for r in results %}
+
+    <div class="card">
+
+        <p class="review"><b>Review:</b> {{ r.review }}</p>
+
+        <p class="sentiment">
+            Sentiment:
+            <span class="badge 
+                {% if r.label == 'positive' or r.label == 'very_positive' %}
+                    positive
+                {% elif r.label == 'neutral' %}
+                    neutral
+                {% else %}
+                    negative
+                {% endif %}
+            ">
+                {{ r.sentiment }}
+            </span>
+        </p>
+
+        <p class="rating"><b>Rating:</b> {{ r.stars }}</p>
+
+        <p class="genre"><b>Genre:</b> {{ r.genre }}</p>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+</body>
+</html>
