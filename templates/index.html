@@ -4,95 +4,8 @@
 <head>
     <title>Movie Review Sentiment Analyzer</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #4facfe, #00f2fe);
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            width: 70%;
-            margin: auto;
-            text-align: center;
-        }
-
-        h1 {
-            color: white;
-            margin-top: 40px;
-        }
-
-        form {
-            margin: 20px 0;
-        }
-
-        input {
-            padding: 12px;
-            width: 60%;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-        }
-
-        button {
-            padding: 12px 25px;
-            background: orange;
-            border: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: darkorange;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            margin: 20px auto;
-            border-radius: 15px;
-            width: 80%;
-            text-align: left;
-            box-shadow: 0px 6px 15px rgba(0,0,0,0.2);
-        }
-
-        .review {
-            font-size: 16px;
-            color: #333;
-        }
-
-        .sentiment {
-            font-weight: bold;
-            font-size: 18px;
-            margin-top: 10px;
-        }
-
-        .rating {
-            color: gold;
-            font-size: 20px;
-        }
-
-        .genre {
-            color: #0077cc;
-            font-weight: bold;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 8px;
-            color: white;
-            font-size: 14px;
-        }
-
-        .positive { background: #28a745; }
-        .neutral { background: #ffc107; }
-        .negative { background: #dc3545; }
-
-    </style>
+    <!-- Link external CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
@@ -101,24 +14,42 @@
 
     <h1>🎬 Movie Review Sentiment Analyzer</h1>
 
+    <!-- Search Form -->
     <form method="POST">
-        <input type="text" name="movie" placeholder="Enter Movie Name...">
-        <button type="submit">Analyze</button>
+        <div class="search-box">
+            <input type="text" id="movieInput" name="movie" placeholder="Enter Movie Name" autocomplete="off">
+
+                <div id="suggestions" class="suggestion-box"></div>
+            <button type="submit">Analyze</button>
+        </div>
     </form>
 
-    {% if message %}
-        <p style="color:white">{{ message }}</p>
+
+    <!-- Accuracy Display -->
+    {% if accuracy %}
+        <h3 style="color:white;">Model Accuracy: {{ accuracy }}</h3>
     {% endif %}
 
+
+    <!-- Message if no results -->
+    {% if message %}
+        <p style="color:white;">{{ message }}</p>
+    {% endif %}
+
+
+    <!-- Review Results -->
     {% for r in results %}
 
     <div class="card">
 
-        <p class="review"><b>Review:</b> {{ r.review }}</p>
+        <p class="review">
+            <b>Review:</b> {{ r.review }}
+        </p>
 
         <p class="sentiment">
             Sentiment:
-            <span class="badge 
+
+            <span class="badge
                 {% if r.label == 'positive' or r.label == 'very_positive' %}
                     positive
                 {% elif r.label == 'neutral' %}
@@ -129,17 +60,70 @@
             ">
                 {{ r.sentiment }}
             </span>
+
         </p>
 
-        <p class="rating"><b>Rating:</b> {{ r.stars }}</p>
+        <p class="rating">
+            <b>Rating:</b> {{ r.stars }}
+        </p>
 
-        <p class="genre"><b>Genre:</b> {{ r.genre }}</p>
+        <p class="genre">
+            <b>Genre:</b> {{ r.genre }}
+        </p>
 
     </div>
 
     {% endfor %}
 
+
+    <!-- Movie Sentiment Graph (Appears After Search Only) -->
+    {% if results %}
+
+        <h2 style="text-align:center;">Movie Sentiment Graph</h2>
+
+        <div style="text-align:center;">
+            <img src="{{ url_for('static', filename='movie_sentiment_graph.png') }}"
+                 style="width:80%; max-width:900px;">
+        </div>
+
+    {% endif %}
+
 </div>
 
 </body>
+<script>
+
+const input = document.getElementById("movieInput");
+const suggestionBox = document.getElementById("suggestions");
+
+input.addEventListener("keyup", async () => {
+
+    const query = input.value;
+
+    if (query.length < 2) {
+        suggestionBox.innerHTML = "";
+        return;
+    }
+
+    const response = await fetch(`/suggest?q=${query}`);
+    const suggestions = await response.json();
+
+    suggestionBox.innerHTML = suggestions.map(movie =>
+        `<div class="suggest-item">${movie}</div>`
+    ).join("");
+
+    document.querySelectorAll(".suggest-item").forEach(item => {
+
+        item.addEventListener("click", () => {
+
+            input.value = item.textContent;
+            suggestionBox.innerHTML = "";
+
+        });
+
+    });
+
+});
+
+</script>
 </html>

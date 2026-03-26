@@ -1,38 +1,80 @@
-from flask import Flask, render_template, request
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
-from textblob import TextBlob
+
+from graph_analysis import generate_movie_graph
+from sentiment_model import predict_sentiment, accuracy
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+
+# ================= NLP SETUP =================
+
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+
+
+def preprocess_text(text):
+
+    if not isinstance(text, str):
+        return ""
+
+    tokens = word_tokenize(text.lower())
+    tokens = [word for word in tokens if word.isalpha()]
+    tokens = [word for word in tokens if word not in stop_words]
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+
+    return " ".join(tokens)
+
 
 app = Flask(__name__)
 
-# load dataset
-data = pd.read_csv("IMDB_Dataset.csv")
+
+# ================= LOAD DATASETS =================
+
+try:
+    imdb_data = pd.read_csv("movie_dataset/IMDB_Dataset.csv")
+    print("IMDB dataset loaded ✅")
+except:
+    imdb_data = None
+    print("IMDB dataset not loaded ❌")
 
 
-# Sentiment prediction using TextBlob (Thenglish version)
-def predict_sentiment(text):
-
-    polarity = TextBlob(text).sentiment.polarity
-
-    if polarity > 0.6:
-        return "Vera Level 🔥", "⭐⭐⭐⭐⭐", "very_positive"
-
-    elif polarity > 0.2:
-        return "Nalla Irukku 👍", "⭐⭐⭐⭐", "positive"
-
-    elif polarity > -0.2:
-        return "Paravala 😐", "⭐⭐⭐", "neutral"
-
-    elif polarity > -0.6:
-        return "Bore-a Irukku 😕", "⭐⭐", "negative"
-
-    else:
-        return "Mokka ❌", "⭐", "very_negative"
+try:
+    rt_movies = pd.read_csv("movie_dataset/rotten_tomatoes_movies.csv")
+    print("Movies dataset loaded ✅")
+except:
+    rt_movies = None
+    print("Movies dataset not loaded ❌")
 
 
-# Genre detection
+try:
+    rt_reviews = pd.read_csv("movie_dataset/rotten_tomatoes_critic_reviews.csv")
+    print("Reviews dataset loaded ✅")
+except:
+    rt_reviews = None
+    print("Reviews dataset not loaded ❌")
+
+
+# ================= AUTOCOMPLETE MOVIE TITLES =================
+
+movie_titles = []
+
+if rt_movies is not None:
+    movie_titles = rt_movies["movie_title"].dropna().str.lower().tolist()
+
+
+# ================= GENRE DETECTION =================
+
 def detect_genre(text):
 
-    text = text.lower()
+    text = str(text).lower()
 
     if "horror" in text:
         return "Horror 👻"
@@ -56,6 +98,8 @@ def detect_genre(text):
         return "General 🎬"
 
 
+# ================= MAIN ROUTE =================
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
@@ -64,40 +108,83 @@ def home():
 
     if request.method == "POST":
 
-        movie = request.form["movie"].lower()
+        movie = request.form.get("movie", "").strip().lower()
 
-        count = 0
+        if movie == "":
+            message = "Please enter a movie name ⚠️"
 
-        for review in data["review"]:
+        elif rt_movies is not None and rt_reviews is not None:
 
-            if movie in review.lower():
+            matched_movies = rt_movies[
+                rt_movies["movie_title"].str.lower().str.contains(movie, na=False)
+            ]
 
-                short_review = " ".join(review.split()[:20])
+            if matched_movies.empty:
 
-                sentiment, stars, label = predict_sentiment(review)
+                message = "Movie not found 😔"
 
-                genre = detect_genre(review)
+            else:
 
-                results.append({
-                    "review": short_review,
-                    "sentiment": sentiment,
-                    "stars": stars,
-                    "genre": genre,
-                    "label": label
-                })
+                movie_links = matched_movies["rotten_tomatoes_link"]
 
-                count += 1
+                filtered_reviews = rt_reviews[
+                    rt_reviews["rotten_tomatoes_link"].isin(movie_links)
+                ]
 
-                if count == 3:
-                    break
+                if filtered_reviews.empty:
 
-        if count == 0:
-            message = "No reviews found for this movie 😔"
+                    message = "No reviews found 😔"
 
-    return render_template("index.html",
-                           results=results,
-                           message=message)
+                else:
 
+                    for review in filtered_reviews["review_content"].dropna().head(5):
+
+                        review = str(review)
+
+                        short_review = " ".join(review.split()[:20])
+
+                        sentiment, stars, label = predict_sentiment(review)
+
+                        genre = detect_genre(review)
+
+                        results.append({
+                            "review": short_review,
+                            "sentiment": sentiment,
+                            "stars": stars,
+                            "genre": genre,
+                            "label": label
+                        })
+
+                    generate_movie_graph(results)
+
+
+    return render_template(
+        "index.html",
+        results=results,
+        accuracy=accuracy,
+        message=message
+    )
+
+
+# ================= AUTOCOMPLETE ROUTE =================
+
+@app.route("/suggest", methods=["GET"])
+def suggest():
+
+    query = request.args.get("q", "").lower()
+
+    if query == "":
+        return jsonify([])
+
+    suggestions = [
+        title for title in movie_titles
+        if query in title
+    ][:8]
+
+    return jsonify(suggestions)
+
+
+# ================= RUN SERVER =================
 
 if __name__ == "__main__":
     app.run(debug=True)

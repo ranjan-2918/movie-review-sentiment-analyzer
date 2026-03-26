@@ -1,10 +1,8 @@
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: Segoe UI, sans-serif;
     background: linear-gradient(to right, #667eea, #764ba2);
 }
-
-/* container */
 
 .container {
     width: 60%;
@@ -13,22 +11,15 @@ body {
     text-align: center;
 }
 
-/* title */
-
 h1 {
     color: white;
-    font-size: 38px;
-    margin-bottom: 25px;
 }
-
-/* input area */
 
 .search-box input {
     width: 60%;
     padding: 12px;
     border-radius: 8px;
     border: none;
-    font-size: 16px;
 }
 
 .search-box button {
@@ -36,17 +27,13 @@ h1 {
     border: none;
     background: #ff9800;
     color: white;
-    font-size: 16px;
     border-radius: 8px;
     cursor: pointer;
-    transition: 0.3s;
 }
 
 .search-box button:hover {
     background: #e68900;
 }
-
-/* result card */
 
 .card {
     background: white;
@@ -57,19 +44,53 @@ h1 {
     box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
 }
 
-/* text styling */
-
 .review {
     font-size: 16px;
-    color: #333;
 }
 
 .sentiment {
     font-size: 18px;
-    color: #4CAF50;
+}
+
+.rating {
+    color: gold;
+    font-size: 18px;
 }
 
 .genre {
-    font-size: 18px;
-    color: #2196F3;
+    color: #2196f3;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: white;
+}
+
+.positive {
+    background: #28a745;
+}
+
+.neutral {
+    background: #ffc107;
+}
+
+.negative {
+    background: #dc3545;
+}
+.suggestion-box {
+    background: white;
+    border-radius: 6px;
+    max-width: 400px;
+    margin: auto;
+    text-align: left;
+}
+
+.suggest-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.suggest-item:hover {
+    background: #f0f0f0;
 }
